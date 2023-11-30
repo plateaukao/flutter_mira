@@ -4,13 +4,14 @@ import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
+import 'package:process_run/shell.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:tray_manager/src/menu_item.dart' as tray;
 
 import 'commands.dart';
 
 // The starting dimensions of the window
-const appDimensions = Size(300, 350);
+const appDimensions = Size(260, 300);
 
 void updateTrayIcon(Brightness brightness) {
   if (brightness == Brightness.light) {
@@ -33,60 +34,63 @@ void initHotkeys() async {
     modifiers: [KeyModifier.control, KeyModifier.alt, KeyModifier.meta],
     scope: HotKeyScope.system,
   );
-  await hotKeyManager.register(
-    refreshHotKey,
-    keyDownHandler: (hotKey) {
-      commandRefresh();
-    },
-    keyUpHandler: (hotKey){ });
+  await hotKeyManager.register(refreshHotKey, keyDownHandler: (hotKey) {
+    commandRefresh();
+  }, keyUpHandler: (hotKey) {});
+}
+
+void initTrayManager() {
+  trayManager.setIcon('images/monitor.png').then((noValue) {
+    var listener = TrayClickListener();
+    trayManager.addListener(listener);
+    if (kDebugMode) {
+      // In dev mode, go ahead and open the app
+      // NOTE: It doesn't look like the app is positioned correctly when doing this, but for the sake of development
+      // it should be fine
+      listener.onTrayIconMouseUp();
+    }
+  });
+  trayManager.setContextMenu([
+    tray.MenuItem(title: 'Init'),
+    tray.MenuItem.separator,
+    tray.MenuItem(title: 'Speed'),
+    tray.MenuItem(title: 'Image'),
+    tray.MenuItem(title: 'Read'),
+    tray.MenuItem(title: 'Video'),
+    tray.MenuItem.separator,
+    tray.MenuItem(title: 'Light Off'),
+    tray.MenuItem(title: 'Refresh'),
+    tray.MenuItem(title: 'Antishake'),
+    tray.MenuItem.separator,
+    tray.MenuItem(title: 'Settings'),
+    tray.MenuItem(title: 'Quit'),
+  ]);
 }
 
 void main() async {
   // Must add this line.
   WidgetsFlutterBinding.ensureInitialized();
-  // For hot reload, `unregisterAll()` needs to be called.
   await hotKeyManager.unregisterAll();
 
-  runApp(const MaterialApp(debugShowCheckedModeBanner: false, home: MyApp()));
+  final platform = PlatformDispatcher.instance;
+  runApp(MaterialApp(
+      theme: ThemeData.light(),
+      darkTheme: ThemeData.dark(),
+      themeMode: platform.platformBrightness == Brightness.light
+          ? ThemeMode.light
+          : ThemeMode.dark,
+      debugShowCheckedModeBanner: false,
+      home: const MyApp()));
 
   doWhenWindowReady(() {
-    trayManager
-        .setIcon('images/monitor.png')
-        .then((noValue) {
-      var listener = TrayClickListener();
-      trayManager.addListener(listener);
-      if (kDebugMode) {
-        // In dev mode, go ahead and open the app
-        // NOTE: It doesn't look like the app is positioned correctly when doing this, but for the sake of development
-        // it should be fine
-        listener.onTrayIconMouseUp();
-      }
-    });
-    trayManager.setContextMenu([
-      tray.MenuItem(title: 'Init'),
-      tray.MenuItem.separator,
-      tray.MenuItem(title: 'Speed'),
-      tray.MenuItem(title: 'Image'),
-      tray.MenuItem(title: 'Read'),
-      tray.MenuItem(title: 'Video'),
-      tray.MenuItem.separator,
-      tray.MenuItem(title: 'Light Off'),
-      tray.MenuItem(title: 'Refresh'),
-      tray.MenuItem(title: 'Antishake'),
-      tray.MenuItem.separator,
-      tray.MenuItem(title: 'Settings'),
-      tray.MenuItem(title: 'Quit'),
-    ]);
-
+    initTrayManager();
     initBrightness();
     initHotkeys();
   });
-
 }
 
 /// This handles clicking on the tray icon
 class TrayClickListener extends TrayListener {
-
   @override
   void onTrayIconRightMouseUp() {
     if (appWindow.isVisible) {
@@ -107,7 +111,7 @@ class TrayClickListener extends TrayListener {
 
   @override
   void onTrayMenuItemClick(tray.MenuItem menuItem) {
-    switch(menuItem.title) {
+    switch (menuItem.title) {
       case 'Init':
         commandInitMira();
         break;
@@ -142,7 +146,7 @@ class TrayClickListener extends TrayListener {
 
   void showSettingWindow() {
     trayManager.getBounds().then((rect) {
-      appWindow.size = const Size(300, 280);
+      appWindow.size = appDimensions;
       var x = rect.left > rect.top ? rect.left : rect.top;
       var y = x == rect.left ? rect.top : rect.left;
       // Set the position so the icon is above the middle of the window
@@ -150,7 +154,6 @@ class TrayClickListener extends TrayListener {
       appWindow.title = 'Mira Menubar App';
       appWindow.show();
     });
-
   }
 }
 
@@ -188,10 +191,8 @@ class _MyHomePageState extends State<MyHomePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              buildContrastSlider(),
-              buildBlackFilterSlider(),
-              buildWhiteFilterSlider(),
-              buildColdLightSlider(),
+              ..._options.map((e) => buildOptionWidget(context, e)),
+              const Divider(),
               TextButton(
                 onPressed: () {
                   appWindow.hide();
@@ -206,18 +207,25 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  double _contrast = 0.0;
-  Widget buildContrastSlider() {
+  Widget buildOptionWidget(BuildContext context, MiraOption option) {
     return Row(
       children: [
-        const Text('Contrast: '),
+        Icon(
+          option.iconId,
+          color: Theme.of(context).primaryColor,
+        ),
+        //Text(option.label),
+        Text(option.value.toInt().toString().padLeft(3),
+            style: TextStyle(
+              color: Theme.of(context).primaryColor,
+            )),
         Slider(
-          value: _contrast,
-          max: 15.0,
+          value: option.value,
+          max: option.maxValue,
           onChanged: (value) {
-            commandContrast(value);
+            option.onChange(value);
             setState(() {
-              _contrast = value;
+              option.value = value;
             });
           },
         ),
@@ -225,59 +233,21 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  double _blackFilter = 0.0;
-  Widget buildBlackFilterSlider() {
-    return Row(
-      children: [
-        const Text('Blackness: '),
-        Slider(
-          value: _blackFilter,
-          max: 254.0,
-          onChanged: (value) {
-            commandBlackFilter(value);
-            setState(() {
-              _blackFilter = value;
-            });
-          },
-        ),
-      ],
-    );
-  }
-  double _whiteFilter = 0.0;
-  Widget buildWhiteFilterSlider() {
-    return Row(
-      children: [
-        const Text('Whiteness: '),
-        Slider(
-          value: _whiteFilter,
-          max: 254.0,
-          onChanged: (value) {
-            commandWhiteFilter(value);
-            setState(() {
-              _whiteFilter = value;
-            });
-          },
-        ),
-      ],
-    );
-  }
-  double _coldLight = 0.0;
-  Widget buildColdLightSlider() {
-    return Row(
-      children: [
-        const Text('Cold Light: '),
-        Slider(
-          value: _coldLight,
-          max: 254.0,
-          onChanged: (value) {
-            commandColdLight(value);
-            setState(() {
-              _coldLight = value;
-            });
-          },
-        ),
-      ],
-    );
-  }
+  final _options = [
+    MiraOption('Contrast', Icons.contrast, 15.0, 0, commandContrast),
+    MiraOption('Black', Icons.circle, 254.0, 0, commandBlackFilter),
+    MiraOption('White', Icons.circle_outlined, 254.0, 10, commandWhiteFilter),
+    MiraOption('Cold', Icons.wb_iridescent, 254.0, 0, commandColdLight),
+    MiraOption('Warm', Icons.wb_incandescent, 254.0, 0, commandWarmLight),
+  ];
 }
 
+class MiraOption {
+  final String label;
+  final IconData iconId;
+  final double maxValue;
+  double value;
+  final Function onChange;
+
+  MiraOption(this.label, this.iconId, this.maxValue, this.value, this.onChange);
+}
