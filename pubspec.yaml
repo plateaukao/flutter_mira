@@ -38,6 +38,7 @@ dependencies:
   bitsdojo_window: ^0.1.2
   process_run: ^0.12.5+3
   hotkey_manager: ^0.1.8
+  quick_usb: ^0.3.1
 
 dev_dependencies:
   flutter_test:

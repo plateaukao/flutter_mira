@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:process_run/shell.dart';
+import 'package:quick_usb/quick_usb.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:tray_manager/src/menu_item.dart' as tray;
 
@@ -113,7 +114,7 @@ class TrayClickListener extends TrayListener {
   void onTrayMenuItemClick(tray.MenuItem menuItem) {
     switch (menuItem.title) {
       case 'Init':
-        commandInitMira();
+        _initMira();
         break;
       case 'Antishake':
         commandAntishake();
@@ -141,6 +142,21 @@ class TrayClickListener extends TrayListener {
         break;
       case 'Quit':
         exit(0);
+    }
+  }
+
+  void _initMira() async {
+    //commandInitMira();
+    await QuickUsb.init();
+    var descriptions = await QuickUsb.getDevicesWithDescription();
+    if (descriptions.any((e) => e.product == 'BOOX Mira133')) {
+      final device = descriptions.firstWhere((e) => e.device.vendorId == 0x0416 && e.device.productId == 0x5020);
+      await QuickUsb.openDevice(device.device);
+      UsbConfiguration conf = UsbConfiguration(id: 1, index: 0, interfaces: []);
+      await QuickUsb.setConfiguration(conf);
+      QuickUsb.closeDevice();
+      print('descriptions $device');
+      print('conf $conf');
     }
   }
 
