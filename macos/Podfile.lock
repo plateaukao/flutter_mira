@@ -6,7 +6,8 @@ PODS:
   - hotkey_manager (0.0.1):
     - FlutterMacOS
     - HotKey
-  - quick_usb (0.0.1):
+  - shared_preferences_foundation (0.0.1):
+    - Flutter
     - FlutterMacOS
   - tray_manager (0.0.1):
     - FlutterMacOS
@@ -15,7 +16,7 @@ DEPENDENCIES:
   - bitsdojo_window_macos (from `Flutter/ephemeral/.symlinks/plugins/bitsdojo_window_macos/macos`)
   - FlutterMacOS (from `Flutter/ephemeral`)
   - hotkey_manager (from `Flutter/ephemeral/.symlinks/plugins/hotkey_manager/macos`)
-  - quick_usb (from `Flutter/ephemeral/.symlinks/plugins/quick_usb/macos`)
+  - shared_preferences_foundation (from `Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin`)
   - tray_manager (from `Flutter/ephemeral/.symlinks/plugins/tray_manager/macos`)
 
 SPEC REPOS:
@@ -29,8 +30,8 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral
   hotkey_manager:
     :path: Flutter/ephemeral/.symlinks/plugins/hotkey_manager/macos
-  quick_usb:
-    :path: Flutter/ephemeral/.symlinks/plugins/quick_usb/macos
+  shared_preferences_foundation:
+    :path: Flutter/ephemeral/.symlinks/plugins/shared_preferences_foundation/darwin
   tray_manager:
     :path: Flutter/ephemeral/.symlinks/plugins/tray_manager/macos
 
@@ -39,7 +40,7 @@ SPEC CHECKSUMS:
   FlutterMacOS: 8f6f14fa908a6fb3fba0cd85dbd81ec4b251fb24
   HotKey: ad59450195936c10992438c4210f673de5aee43e
   hotkey_manager: c32bf0bfe8f934b7bc17ab4ad5c4c142960b023c
-  quick_usb: 036467c5deecb1da58b824f4847ce1ee774c9947
+  shared_preferences_foundation: 5b919d13b803cadd15ed2dc053125c68730e5126
   tray_manager: 9064e219c56d75c476e46b9a21182087930baf90
 
 PODFILE CHECKSUM: af864e620abc072d9ae3da711fa21ac83f207512

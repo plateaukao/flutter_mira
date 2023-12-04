@@ -5,14 +5,18 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:process_run/shell.dart';
-import 'package:quick_usb/quick_usb.dart';
+
+//import 'package:quick_usb/quick_usb.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:tray_manager/src/menu_item.dart' as tray;
+//import 'package:hid_macos/hid_macos.dart';
 
 import 'commands.dart';
 
+final miraDisplay = MiraDisplay();
+
 // The starting dimensions of the window
-const appDimensions = Size(260, 300);
+const appDimensions = Size(260, 427);
 
 void updateTrayIcon(Brightness brightness) {
   if (brightness == Brightness.light) {
@@ -36,7 +40,15 @@ void initHotkeys() async {
     scope: HotKeyScope.system,
   );
   await hotKeyManager.register(refreshHotKey, keyDownHandler: (hotKey) {
-    commandRefresh();
+    miraDisplay.commandRefresh();
+  }, keyUpHandler: (hotKey) {});
+
+  HotKey escHotKey = HotKey(
+    KeyCode.escape,
+    scope: HotKeyScope.inapp,
+  );
+  await hotKeyManager.register(escHotKey, keyDownHandler: (hotKey) {
+    appWindow.hide();
   }, keyUpHandler: (hotKey) {});
 }
 
@@ -72,6 +84,7 @@ void main() async {
   // Must add this line.
   WidgetsFlutterBinding.ensureInitialized();
   await hotKeyManager.unregisterAll();
+  await miraDisplay.init();
 
   final platform = PlatformDispatcher.instance;
   runApp(MaterialApp(
@@ -106,7 +119,8 @@ class TrayClickListener extends TrayListener {
     if (appWindow.isVisible) {
       appWindow.hide();
     } else {
-      trayManager.popUpContextMenu();
+      showSettingWindow();
+      //trayManager.popUpContextMenu();
     }
   }
 
@@ -117,25 +131,25 @@ class TrayClickListener extends TrayListener {
         _initMira();
         break;
       case 'Antishake':
-        commandAntishake();
+        miraDisplay.commandAntishake();
         break;
       case 'Speed':
-        commandSpeed();
+        miraDisplay.commandSpeed();
         break;
       case 'Image':
-        commandImage();
+        miraDisplay.commandImage();
         break;
       case 'Read':
-        commandRead();
+        miraDisplay.commandRead();
         break;
       case 'Video':
-        commandVideo();
+        miraDisplay.commandVideo();
         break;
       case 'Light Off':
-        commandLightOff();
+        miraDisplay.commandLightOff();
         break;
       case 'Refresh':
-        commandRefresh();
+        miraDisplay.commandRefresh();
         break;
       case 'Settings':
         showSettingWindow();
@@ -145,19 +159,33 @@ class TrayClickListener extends TrayListener {
     }
   }
 
+  //final HidPluginMacOS _hidPluginMacOS = HidPluginMacOS();
+
   void _initMira() async {
-    //commandInitMira();
-    await QuickUsb.init();
-    var descriptions = await QuickUsb.getDevicesWithDescription();
-    if (descriptions.any((e) => e.product == 'BOOX Mira133')) {
-      final device = descriptions.firstWhere((e) => e.device.vendorId == 0x0416 && e.device.productId == 0x5020);
-      await QuickUsb.openDevice(device.device);
-      UsbConfiguration conf = UsbConfiguration(id: 1, index: 0, interfaces: []);
-      await QuickUsb.setConfiguration(conf);
-      QuickUsb.closeDevice();
-      print('descriptions $device');
-      print('conf $conf');
-    }
+    miraDisplay.commandInitMira();
+
+    // final devices = await _hidPluginMacOS.getDeviceList();
+    // if (devices.any((e) => e.productName == 'BOOX Mira133')) {
+    //   final device = devices
+    //       .firstWhere((e) => e.vendorId == 0x0416 && e.productId == 0x5020);
+    //   await device.open();
+    //   await device.write(Uint8List.fromList([0x00, 0x01]));
+    //   await device.close();
+    //   print('descriptions $device');
+    // }
+    // await QuickUsb.init();
+    // var descriptions = await QuickUsb.getDevicesWithDescription();
+    // if (descriptions.any((e) => e.product == 'BOOX Mira133')) {
+    //   final device = descriptions.firstWhere((e) => e.device.vendorId == 0x0416 && e.device.productId == 0x5020);
+    //   await QuickUsb.openDevice(device.device);
+    //   final conf = await QuickUsb.getConfiguration(0);
+    //   final interf = conf.interfaces.first;
+    //   bool succeed = await QuickUsb.claimInterface(interf);
+    //   await QuickUsb.bulkTransferOut(interf.endpoints[1], Uint8List.fromList([0x00, 0x01]));
+    //   await QuickUsb.releaseInterface(interf);
+    //   QuickUsb.closeDevice();
+    //   print('descriptions $device');
+    // }
   }
 
   void showSettingWindow() {
@@ -198,6 +226,16 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+
+  @override
+  void initState() {
+    _options.firstWhere((e) => e.label == 'Contrast').value = miraDisplay.currentMiraModeOptions.contrast;
+    _options.firstWhere((e) => e.label == 'Black').value = miraDisplay.currentMiraModeOptions.black;
+    _options.firstWhere((e) => e.label == 'White').value = miraDisplay.currentMiraModeOptions.white;
+    _options.firstWhere((e) => e.label == 'Speed').value = miraDisplay.currentMiraModeOptions.speed;
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -207,15 +245,30 @@ class _MyHomePageState extends State<MyHomePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              ..._options.map((e) => buildOptionWidget(context, e)),
+              _buildModesWidget(context),
+              const SizedBox(height: 5),
+              _buildFunctionWidget(context),
+              const SizedBox(height: 5),
+              ..._options.map((e) => _buildOptionWidget(context, e)),
               const Divider(),
-              TextButton(
-                onPressed: () {
-                  appWindow.hide();
-                  //exit(0);
-                },
-                child: const Text('Close'),
-              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () => appWindow.hide(),
+                      child: const Text('Close'),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => exit(0),
+                    icon: Icon(
+                        Icons.power_settings_new,
+                      color: Theme.of(context).primaryColor,
+
+                    ),
+                  ),
+                ],
+              )
             ],
           ),
         ),
@@ -223,7 +276,64 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-  Widget buildOptionWidget(BuildContext context, MiraOption option) {
+  Widget _buildModesWidget(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        ..._modes.map((e) => _buildOutlinedButton(context, e)),
+      ],
+    );
+  }
+
+  Widget _buildOutlinedButton(BuildContext context, MiraMode mode) =>
+    OutlinedButton(
+      onPressed: () async {
+        await mode.command();
+        updateOptions();
+      },
+      child: Icon(mode.iconId),
+      style: OutlinedButton.styleFrom(
+          side: BorderSide(
+            color: miraDisplay.getModeLabel() == mode.label ? Theme.of(context).primaryColor : Theme.of(context).dividerColor, // Change border color
+            width: 1.0,
+          )
+      ),
+    );
+
+  void updateOptions() {
+    setState(() {
+      _options.firstWhere((e) => e.label == 'Contrast').value = miraDisplay.currentMiraModeOptions.contrast;
+      _options.firstWhere((e) => e.label == 'Black').value = miraDisplay.currentMiraModeOptions.black;
+      _options.firstWhere((e) => e.label == 'White').value = miraDisplay.currentMiraModeOptions.white;
+      _options.firstWhere((e) => e.label == 'Speed').value = miraDisplay.currentMiraModeOptions.speed;
+    });
+  }
+
+  Widget _buildFunctionWidget(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        OutlinedButton(
+          onPressed: () => miraDisplay.commandInitMira(),
+          child: const Text('Init')
+        ),
+        OutlinedButton(
+          onPressed: () => miraDisplay.commandLightOff(),
+          child: const Icon(Icons.light),
+        ),
+        OutlinedButton(
+          onPressed: () => miraDisplay.commandRefresh(),
+          child: const Icon(Icons.refresh),
+        ),
+        OutlinedButton(
+            onPressed: () => miraDisplay.commandAntishake(),
+            child: const Icon(Icons.waves)
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOptionWidget(BuildContext context, MiraOption option) {
     return Row(
       children: [
         Icon(
@@ -237,7 +347,9 @@ class _MyHomePageState extends State<MyHomePage> {
             )),
         Slider(
           value: option.value,
+          min: (option.label == 'Speed')? 1.0 : 0.0,
           max: option.maxValue,
+          divisions: (option.label == 'Speed')? 6 : null,
           onChanged: (value) {
             option.onChange(value);
             setState(() {
@@ -250,12 +362,28 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   final _options = [
-    MiraOption('Contrast', Icons.contrast, 15.0, 0, commandContrast),
-    MiraOption('Black', Icons.circle, 254.0, 0, commandBlackFilter),
-    MiraOption('White', Icons.circle_outlined, 254.0, 10, commandWhiteFilter),
-    MiraOption('Cold', Icons.wb_iridescent, 254.0, 0, commandColdLight),
-    MiraOption('Warm', Icons.wb_incandescent, 254.0, 0, commandWarmLight),
+    MiraOption('Contrast', Icons.contrast, 15.0, 0, miraDisplay.commandContrast),
+    MiraOption('Black', Icons.circle, 254.0, 0, miraDisplay.commandBlackFilter),
+    MiraOption('White', Icons.circle_outlined, 254.0, 10, miraDisplay.commandWhiteFilter),
+    MiraOption('Speed', Icons.directions_run, 7.0, 7.0, miraDisplay.commandSpeedValue),
+    MiraOption('Cold', Icons.wb_iridescent_outlined, 254.0, 0, miraDisplay.commandColdLight),
+    MiraOption('Warm', Icons.wb_incandescent_outlined, 254.0, 0, miraDisplay.commandWarmLight),
   ];
+
+  final _modes = [
+    MiraMode('Video', Icons.play_circle, miraDisplay.commandVideo),
+    MiraMode('Speed', Icons.flash_on, miraDisplay.commandSpeed),
+    MiraMode('Image', Icons.image, miraDisplay.commandImage),
+    MiraMode('Read', Icons.chrome_reader_mode, miraDisplay.commandRead),
+  ];
+}
+
+class MiraMode {
+  final String label;
+  final IconData iconId;
+  final Function command;
+
+  MiraMode(this.label, this.iconId, this.command);
 }
 
 class MiraOption {
