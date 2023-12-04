@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:bitsdojo_window/bitsdojo_window.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_mira/theme.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:process_run/shell.dart';
 
@@ -86,15 +87,7 @@ void main() async {
   await hotKeyManager.unregisterAll();
   await miraDisplay.init();
 
-  final platform = PlatformDispatcher.instance;
-  runApp(MaterialApp(
-      theme: ThemeData.light(),
-      darkTheme: ThemeData.dark(),
-      themeMode: platform.platformBrightness == Brightness.light
-          ? ThemeMode.light
-          : ThemeMode.dark,
-      debugShowCheckedModeBanner: false,
-      home: const MyApp()));
+  runApp(const MyApp());
 
   doWhenWindowReady(() {
     initTrayManager();
@@ -207,11 +200,15 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    final platform = PlatformDispatcher.instance;
     return MaterialApp(
       title: 'Mira App',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      themeMode: platform.platformBrightness == Brightness.light
+          ? ThemeMode.light
+          : ThemeMode.dark,
+      debugShowCheckedModeBanner: false,
       home: const MyHomePage(title: 'Mira App'),
     );
   }
@@ -226,13 +223,16 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
   @override
   void initState() {
-    _options.firstWhere((e) => e.label == 'Contrast').value = miraDisplay.currentMiraModeOptions.contrast;
-    _options.firstWhere((e) => e.label == 'Black').value = miraDisplay.currentMiraModeOptions.black;
-    _options.firstWhere((e) => e.label == 'White').value = miraDisplay.currentMiraModeOptions.white;
-    _options.firstWhere((e) => e.label == 'Speed').value = miraDisplay.currentMiraModeOptions.speed;
+    _options.firstWhere((e) => e.label == 'Contrast').value =
+        miraDisplay.currentMiraModeOptions.contrast;
+    _options.firstWhere((e) => e.label == 'Black').value =
+        miraDisplay.currentMiraModeOptions.black;
+    _options.firstWhere((e) => e.label == 'White').value =
+        miraDisplay.currentMiraModeOptions.white;
+    _options.firstWhere((e) => e.label == 'Speed').value =
+        miraDisplay.currentMiraModeOptions.speed;
     super.initState();
   }
 
@@ -255,16 +255,17 @@ class _MyHomePageState extends State<MyHomePage> {
                 children: [
                   Expanded(
                     child: TextButton(
-                      onPressed: () => appWindow.hide(),
-                      child: const Text('Close'),
-                    ),
+                        onPressed: () => appWindow.hide(),
+                        child: Text('Close',
+                            style: Theme.of(context).textTheme.bodyLarge,
+                            )
+                        ),
                   ),
+                  Container(width: 1, height: 30, color: Colors.grey),
                   IconButton(
                     onPressed: () => exit(0),
-                    icon: Icon(
-                        Icons.power_settings_new,
-                      color: Theme.of(context).primaryColor,
-
+                    icon: const Icon(
+                      Icons.power_settings_new,
                     ),
                   ),
                 ],
@@ -286,26 +287,36 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _buildOutlinedButton(BuildContext context, MiraMode mode) =>
-    OutlinedButton(
-      onPressed: () async {
-        await mode.command();
-        updateOptions();
-      },
-      child: Icon(mode.iconId),
-      style: OutlinedButton.styleFrom(
-          side: BorderSide(
-            color: miraDisplay.getModeLabel() == mode.label ? Theme.of(context).primaryColor : Theme.of(context).dividerColor, // Change border color
-            width: 1.0,
-          )
-      ),
-    );
+      OutlinedButton(
+        onPressed: () async {
+          await mode.command();
+          updateOptions();
+        },
+        child: Icon(
+          mode.iconId,
+          color: Theme.of(context).iconTheme.color,
+        ),
+        style: OutlinedButton.styleFrom(
+            side: BorderSide(
+          color: miraDisplay.getModeLabel() == mode.label
+              ? Colors.blue
+              : Theme.of(context).dividerColor,
+          width: miraDisplay.getModeLabel() == mode.label
+              ? 2.0
+              : 2.0, // Border width
+        )),
+      );
 
   void updateOptions() {
     setState(() {
-      _options.firstWhere((e) => e.label == 'Contrast').value = miraDisplay.currentMiraModeOptions.contrast;
-      _options.firstWhere((e) => e.label == 'Black').value = miraDisplay.currentMiraModeOptions.black;
-      _options.firstWhere((e) => e.label == 'White').value = miraDisplay.currentMiraModeOptions.white;
-      _options.firstWhere((e) => e.label == 'Speed').value = miraDisplay.currentMiraModeOptions.speed;
+      _options.firstWhere((e) => e.label == 'Contrast').value =
+          miraDisplay.currentMiraModeOptions.contrast;
+      _options.firstWhere((e) => e.label == 'Black').value =
+          miraDisplay.currentMiraModeOptions.black;
+      _options.firstWhere((e) => e.label == 'White').value =
+          miraDisplay.currentMiraModeOptions.white;
+      _options.firstWhere((e) => e.label == 'Speed').value =
+          miraDisplay.currentMiraModeOptions.speed;
     });
   }
 
@@ -314,21 +325,19 @@ class _MyHomePageState extends State<MyHomePage> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         OutlinedButton(
-          onPressed: () => miraDisplay.commandInitMira(),
-          child: const Text('Init')
-        ),
+            onPressed: () => miraDisplay.commandInitMira(),
+            child: Text('Init', style: Theme.of(context).textTheme.bodySmall,)),
         OutlinedButton(
           onPressed: () => miraDisplay.commandLightOff(),
-          child: const Icon(Icons.light),
+          child: Icon(Icons.light, color: Theme.of(context).iconTheme.color),
         ),
         OutlinedButton(
           onPressed: () => miraDisplay.commandRefresh(),
-          child: const Icon(Icons.refresh),
+          child: Icon(Icons.refresh, color: Theme.of(context).iconTheme.color),
         ),
         OutlinedButton(
             onPressed: () => miraDisplay.commandAntishake(),
-            child: const Icon(Icons.waves)
-        ),
+            child: Icon(Icons.waves, color: Theme.of(context).iconTheme.color)),
       ],
     );
   }
@@ -338,18 +347,14 @@ class _MyHomePageState extends State<MyHomePage> {
       children: [
         Icon(
           option.iconId,
-          color: Theme.of(context).primaryColor,
         ),
         //Text(option.label),
-        Text(option.value.toInt().toString().padLeft(3),
-            style: TextStyle(
-              color: Theme.of(context).primaryColor,
-            )),
+        Text(option.value.toInt().toString().padLeft(3)),
         Slider(
           value: option.value,
-          min: (option.label == 'Speed')? 1.0 : 0.0,
+          min: (option.label == 'Speed') ? 1.0 : 0.0,
           max: option.maxValue,
-          divisions: (option.label == 'Speed')? 6 : null,
+          divisions: (option.label == 'Speed') ? 6 : null,
           onChanged: (value) {
             option.onChange(value);
             setState(() {
@@ -362,12 +367,17 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   final _options = [
-    MiraOption('Contrast', Icons.contrast, 15.0, 0, miraDisplay.commandContrast),
+    MiraOption(
+        'Contrast', Icons.contrast, 15.0, 0, miraDisplay.commandContrast),
     MiraOption('Black', Icons.circle, 254.0, 0, miraDisplay.commandBlackFilter),
-    MiraOption('White', Icons.circle_outlined, 254.0, 10, miraDisplay.commandWhiteFilter),
-    MiraOption('Speed', Icons.directions_run, 7.0, 7.0, miraDisplay.commandSpeedValue),
-    MiraOption('Cold', Icons.wb_iridescent_outlined, 254.0, 0, miraDisplay.commandColdLight),
-    MiraOption('Warm', Icons.wb_incandescent_outlined, 254.0, 0, miraDisplay.commandWarmLight),
+    MiraOption('White', Icons.circle_outlined, 254.0, 10,
+        miraDisplay.commandWhiteFilter),
+    MiraOption(
+        'Speed', Icons.directions_run, 7.0, 7.0, miraDisplay.commandSpeedValue),
+    MiraOption('Cold', Icons.wb_iridescent_outlined, 254.0, 0,
+        miraDisplay.commandColdLight),
+    MiraOption('Warm', Icons.wb_incandescent_outlined, 254.0, 0,
+        miraDisplay.commandWarmLight),
   ];
 
   final _modes = [
