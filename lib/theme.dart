@@ -1,11 +1,10 @@
-
-
 import 'package:flutter/material.dart';
 
 final darkTheme = ThemeData.dark().copyWith(
   sliderTheme: SliderThemeData(
     activeTrackColor: Colors.white,
     inactiveTrackColor: Colors.white.withOpacity(0.3),
+    activeTickMarkColor: Colors.black,
     thumbColor: Colors.white,
     overlayColor: Colors.white.withOpacity(0.3),
   ),

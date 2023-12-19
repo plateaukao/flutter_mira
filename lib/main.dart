@@ -17,7 +17,7 @@ import 'commands.dart';
 final miraDisplay = MiraDisplay();
 
 // The starting dimensions of the window
-const appDimensions = Size(260, 427);
+const appDimensions = Size(240, 430);
 
 void updateTrayIcon(Brightness brightness) {
   if (brightness == Brightness.light) {
@@ -246,9 +246,7 @@ class _MyHomePageState extends State<MyHomePage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _buildModesWidget(context),
-              const SizedBox(height: 5),
               _buildFunctionWidget(context),
-              const SizedBox(height: 5),
               ..._options.map((e) => _buildOptionWidget(context, e)),
               const Divider(),
               Row(
@@ -287,12 +285,12 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Widget _buildOutlinedButton(BuildContext context, MiraMode mode) =>
-      OutlinedButton(
+      IconButton(
         onPressed: () async {
           await mode.command();
           updateOptions();
         },
-        child: Icon(
+        icon: Icon(
           mode.iconId,
           color: Theme.of(context).iconTheme.color,
         ),
@@ -301,9 +299,7 @@ class _MyHomePageState extends State<MyHomePage> {
           color: miraDisplay.getModeLabel() == mode.label
               ? Colors.blue
               : Theme.of(context).dividerColor,
-          width: miraDisplay.getModeLabel() == mode.label
-              ? 2.0
-              : 2.0, // Border width
+          width: 2.0,
         )),
       );
 
@@ -324,20 +320,20 @@ class _MyHomePageState extends State<MyHomePage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        OutlinedButton(
+        TextButton(
             onPressed: () => miraDisplay.commandInitMira(),
             child: Text('Init', style: Theme.of(context).textTheme.bodySmall,)),
-        OutlinedButton(
+        IconButton(
           onPressed: () => miraDisplay.commandLightOff(),
-          child: Icon(Icons.light, color: Theme.of(context).iconTheme.color),
+          icon: Icon(Icons.light, color: Theme.of(context).iconTheme.color),
         ),
-        OutlinedButton(
+        IconButton(
           onPressed: () => miraDisplay.commandRefresh(),
-          child: Icon(Icons.refresh, color: Theme.of(context).iconTheme.color),
+          icon: Icon(Icons.refresh, color: Theme.of(context).iconTheme.color),
         ),
-        OutlinedButton(
+        IconButton(
             onPressed: () => miraDisplay.commandAntishake(),
-            child: Icon(Icons.waves, color: Theme.of(context).iconTheme.color)),
+            icon: Icon(Icons.waves, color: Theme.of(context).iconTheme.color)),
       ],
     );
   }
@@ -368,15 +364,15 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final _options = [
     MiraOption(
-        'Contrast', Icons.contrast, 15.0, 0, miraDisplay.commandContrast),
-    MiraOption('Black', Icons.circle, 254.0, 0, miraDisplay.commandBlackFilter),
-    MiraOption('White', Icons.circle_outlined, 254.0, 10,
+        'Contrast', Icons.contrast, 13.0, 0, miraDisplay.commandContrast),
+    MiraOption('Black', Icons.circle, 40.0, 0, miraDisplay.commandBlackFilter),
+    MiraOption('White', Icons.circle_outlined, 40.0, 10,
         miraDisplay.commandWhiteFilter),
     MiraOption(
         'Speed', Icons.directions_run, 7.0, 7.0, miraDisplay.commandSpeedValue),
-    MiraOption('Cold', Icons.wb_iridescent_outlined, 254.0, 0,
+    MiraOption('Cold', Icons.wb_iridescent_outlined, 80.0, 0,
         miraDisplay.commandColdLight),
-    MiraOption('Warm', Icons.wb_incandescent_outlined, 254.0, 0,
+    MiraOption('Warm', Icons.wb_incandescent_outlined, 80.0, 0,
         miraDisplay.commandWarmLight),
   ];
 
